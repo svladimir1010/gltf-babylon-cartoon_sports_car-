@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<title>Babylon Template</title>
+
+		<!-- Babylon.js -->
+		<script src="https://code.jquery.com/pep/0.4.2/pep.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+		<script src="https://preview.babylonjs.com/ammo.js"></script>
+		<script src="https://preview.babylonjs.com/cannon.js"></script>
+		<script src="https://preview.babylonjs.com/Oimo.js"></script>
+		<script src="https://preview.babylonjs.com/libktx.js"></script>
+		<script src="https://preview.babylonjs.com/earcut.min.js"></script>
+		<script src="https://preview.babylonjs.com/babylon.js"></script>
+		<script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+		<script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+		<script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+		<script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+		<script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+		<script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+		<script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+
+		<style>
+            html,
+            body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+		</style>
+	</head>
+	<body>
+		<canvas id="renderCanvas" touch-action="none"></canvas>
+		<!-- touch-action="none" for best results from PEP -->
+
+		<script>
+            const canvas = document.getElementById( 'renderCanvas' ) // Get the canvas element
+
+            const heightRatio = 1.5;
+            canvas.height = canvas.width * heightRatio;
+
+            let engine = null
+            let scene = null
+            let sceneToRender = null
+            let createDefaultEngine = function() {
+                return new BABYLON.Engine( canvas, true, { preserveDrawingBuffer: true, stencil: true } )
+            }
+
+            let createDefaultScene = function() {
+                BABYLON.Animation.AllowMatricesInterpolation = false
+                // Setup the scene
+                let scene = new BABYLON.Scene( engine )
+                let camera = new BABYLON.ArcRotateCamera(
+                    'camera1',
+                    -(Math.PI / 2),
+                    Math.PI / 2,
+                    8,
+                    new BABYLON.Vector3( 0, 1, 0 ),
+                    scene
+                )
+                let light = new BABYLON.HemisphericLight( 'light1', new BABYLON.Vector3( 0, 1, 0 ), scene )
+                return scene
+            }
+
+            let createScene = function( scene ) {
+                // Append glTF model to scene.
+                BABYLON.SceneLoader.ImportMesh(
+                    '',
+                    '',
+                    'scene.gltf',
+                    scene,
+                    function(
+                        meshes,
+                        particleSystems,
+                        skeletons,
+                        animationList
+                    ) {
+                        scene.createDefaultCameraOrLight( true )
+                        scene.activeCamera.attachControl( canvas, false )
+                        scene.createDefaultEnvironment()
+                        // Name: CARRERA, type: AnimationGroup
+                        scene.animationGroups.slice().forEach( ( animationGroup ) => animationGroup.pause() )
+                        const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI( 'UI' )
+
+                        // Text Model title
+                        const textblock = new BABYLON.GUI.TextBlock()
+                        textblock.text = 'Mode name: "CARRERA"'
+                        textblock.fontSize = 24
+                        textblock.top = '-43%'
+                        textblock.left = '-38%'
+                        textblock.color = '#dedede'
+                        advancedTexture.addControl( textblock )
+
+                        const button1 = BABYLON.GUI.Button.CreateSimpleButton( 'btn', 'Texture' )
+                        button1.top = '-38%'
+                        button1.left = '-42%'
+                        button1.hoverCursor = 'pointer'
+                        button1.thickness = 2
+                        button1.display = 'block'
+                        button1.width = '150px'
+                        button1.height = '35px'
+                        button1.color = '#575757'
+                        button1.background = '#dedede'
+                        button1.cornerRadius = 4
+                        button1.onPointerDownObservable.add( () => {
+                            meshes[1].material.wireframe = false
+                        } )
+                        button1.pointerEnterAnimation = () => button1.color = '#000000'
+                        button1.pointerOutAnimation = () => button1.color = '#575757'
+                        advancedTexture.addControl( button1 )
+
+                        const button2 = BABYLON.GUI.Button.CreateSimpleButton( 'btn', 'Warfrme' )
+                        button2.top = '-38%'
+                        button2.left = '-31%'
+                        button2.hoverCursor = 'pointer'
+                        button2.thickness = 2
+                        button2.display = 'block'
+                        button2.width = '150px'
+                        button2.height = '35px'
+                        button2.color = '#575757'
+                        button2.background = '#dedede'
+                        button2.cornerRadius = 4
+                        button2.onPointerDownObservable.add( () => meshes[1].material.wireframe = true )
+                        button2.pointerEnterAnimation = () => button2.color = '#000000'
+                        button2.pointerOutAnimation = () => button2.color = '#575757'
+                        advancedTexture.addControl( button2 )
+
+
+                        let animation = false
+                        const button3 = BABYLON.GUI.Button.CreateSimpleButton( 'btn', 'Animation' )
+                        button3.top = '-31%'
+                        button3.left = '-42%'
+                        button3.hoverCursor = 'pointer'
+                        button3.thickness = 2
+                        button3.display = 'block'
+                        button3.width = '150px'
+                        button3.height = '35px'
+                        button3.cornerRadius = 4
+                        button3.color = '#575757'
+                        button3.background = '#dedede'
+                        button3.onPointerDownObservable.add( () => {
+                            animation = !animation
+                            scene.animationGroups.slice().forEach( animationGroup => {
+                                if( animation ) {
+                                    button3.color = '#000000'
+                                    button3.background = '#eeeeee'
+                                    animationGroup.restart()
+                                } else {
+                                    button3.color = '#575757'
+                                    button3.background = '#dedede'
+                                    animationGroup.pause()
+                                }
+                            } )
+                        } )
+                        advancedTexture.addControl( button3 )
+
+                        const button4 = BABYLON.GUI.Button.CreateSimpleButton( 'btn', 'Model 1' )
+                        button4.top = 300
+                        button4.left = -645
+                        button4.hoverCursor = 'pointer'
+                        button4.thickness = 2
+                        button4.display = 'block'
+                        button4.width = '150px'
+                        button4.height = '35px'
+                        button4.color = '#575757'
+                        button4.background = '#dedede'
+                        button4.cornerRadius = 4
+                        button4.onPointerDownObservable.add( () => alert("Don't work") )
+                        button4.pointerEnterAnimation = () => button4.color = '#000000'
+                        button4.pointerOutAnimation = () => button4.color = '#575757'
+                        advancedTexture.addControl( button4 )
+
+                        const button5 = BABYLON.GUI.Button.CreateSimpleButton( 'btn', 'Model 2' )
+                        button5.top = 300
+                        button5.left = -480
+                        button5.hoverCursor = 'pointer'
+                        button5.thickness = 2
+                        button5.display = 'block'
+                        button5.width = '150px'
+                        button5.height = '35px'
+                        button5.color = '#575757'
+                        button5.background = '#dedede'
+                        button5.cornerRadius = 4
+                        button5.onPointerDownObservable.add( () => alert("Don't work") )
+                        button5.pointerEnterAnimation = () => button5.color = '#000000'
+                        button5.pointerOutAnimation = () => button5.color = '#575757'
+                        advancedTexture.addControl( button5 )
+                    } )
+
+                // function create Ground
+                const buildGround = () => {
+                    const groundMat = new BABYLON.StandardMaterial( 'groundMat' )
+                    groundMat.diffuseTexture = new BABYLON.Texture( './textures/TARMAC_diffuse.jpeg' )
+                    const ground = BABYLON.MeshBuilder.CreateGround( 'ground', { width: 25, height: 25, } )
+                    ground.material = groundMat
+                }
+                const ground = buildGround()
+                return scene
+            }
+
+            engine = createDefaultEngine()
+            if( !engine ) throw 'engine should not be null.'
+            scene = createDefaultScene()
+            scene = createScene( scene )
+            sceneToRender = scene
+
+            // Register a render loop to repeatedly render the scene
+            engine.runRenderLoop( function() {
+                if( sceneToRender ) {
+                    sceneToRender.render()
+                }
+            } )
+
+            // Watch for browser/canvas resize events
+            window.addEventListener( 'resize', function() {
+                engine.resize()
+            } )
+		</script>
+	</body>
+</html>
